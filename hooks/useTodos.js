@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadTodos, saveTodos } from '../utils/todoStorage';
-
-const newTodo = (text) => ({
-  id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-  text,
-  done: false,
-  createdAt: Date.now(),
-});
+import { clearDoneTodos, createTodo, deleteTodoById, filterTodos, toggleTodoById } from '../utils/todoModel';
 
 export default function useTodos() {
   const [items, setItems] = useState([]);
+  const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,20 +30,22 @@ export default function useTodos() {
   }, [items, loading]);
 
   const addTodo = (text) => {
-    setItems((prev) => [newTodo(text), ...prev]);
+    setItems((prev) => [createTodo(text), ...prev]);
   };
 
   const toggleTodo = (id) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, done: !item.done } : item)));
+    setItems((prev) => toggleTodoById(prev, id));
   };
 
   const deleteTodo = (id) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) => deleteTodoById(prev, id));
   };
 
   const clearDone = () => {
-    setItems((prev) => prev.filter((item) => !item.done));
+    setItems((prev) => clearDoneTodos(prev));
   };
+
+  const visibleItems = useMemo(() => filterTodos(items, filter), [items, filter]);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -58,7 +55,9 @@ export default function useTodos() {
   }, [items]);
 
   return {
-    items,
+    items: visibleItems,
+    filter,
+    setFilter,
     loading,
     addTodo,
     toggleTodo,
